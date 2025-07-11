@@ -6,7 +6,7 @@ import streamlit as st
 from PIL import Image
 
 # ✅ Set paths and Google Drive info
-MODEL_PATH = "/content/drive/MyDrive/Colab Notebooks/Datasets/dataset/xray_dataset_covid19/COVID19_Xray_Detection.keras"
+MODEL_PATH = "models/COVID19_Xray_Detection.keras"
 MODEL_DIR = os.path.dirname(MODEL_PATH)
 GDRIVE_FILE_ID = "1405exPVV5Zrkq8rwKs-9h6NScRoLqWwV"
 GDRIVE_URL = f"https://drive.google.com/drive/folders/1lxVfKnJN8alequpqVWshdjKjdPRQNnx2?usp=sharing"
