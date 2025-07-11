@@ -5,7 +5,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from io import BytesIO
 
-MODEL_PATH = "emtech2_project/COVID19_Xray_Detection.keras"
+MODEL_PATH = "emtech2_project/COVID19_Xray_Detection.tflite"
 IMG_SIZE = (224, 224)
 
 class_labels = [
