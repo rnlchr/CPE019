@@ -6,9 +6,9 @@ import streamlit as st
 from PIL import Image
 
 # Google Drive direct model download link
-GDRIVE_MODEL_ID = "1AbCDeFGHIjklMNOPQR"  # 🔁 REPLACE THIS with your actual model ID
-MODEL_PATH = "COVID19_Xray_Detection.h5"
-GDRIVE_URL = f"https://drive.google.com/uc?id={GDRIVE_MODEL_ID}"
+GDRIVE_MODEL_ID = "1kCWOATEzCVxJQhaCLz5_Em7H3ydxsvs4"  # 🔁 REPLACE THIS with your actual model ID
+MODEL_PATH = "/content/drive/MyDrive/Colab Notebooks/Datasets/dataset/xray_dataset_covid19/COVID19_Xray_Detection.h5"
+GDRIVE_URL = f"https://drive.google.com/drive/folders/1lxVfKnJN8alequpqVWshdjKjdPRQNnx2?usp=drive_link"
 
 # Class mapping
 label_to_name = {
