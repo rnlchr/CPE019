@@ -1,58 +1,53 @@
-import os
-import gdown
+import streamlit as st
 import numpy as np
 import tensorflow as tf
-import streamlit as st
-from PIL import Image
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from io import BytesIO
 
-# File settings
-MODEL_PATH = "models/COVID19_Xray_Detection.keras"
-MODEL_DIR = os.path.dirname(MODEL_PATH)
-GDRIVE_FILE_ID = "1405exPVV5Zrkq8rwKs-9h6NScRoLqWwV"
+# ✅ Image input settings
+IMG_SIZE = (224, 224)
 
-# ✅ Direct download link (gdown handles this ID)
+# ✅ Label classes
+class_labels = [
+    "COVID-19", 
+    "Lung Opacity", 
+    "Normal", 
+    "Viral Pneumonia"
+]
+
+# ✅ Load model (from local .h5 file in same folder or subfolder)
 @st.cache_resource
-def load_model():
-    if not os.path.exists(MODEL_PATH):
-        os.makedirs(MODEL_DIR, exist_ok=True)
-        gdown.download(id=GDRIVE_FILE_ID, output=MODEL_PATH, quiet=False)
+def load_trained_model():
+    return load_model("COVID19_Xray_Detection.h5", compile=False)
 
-        # Optional sanity check: file must not be suspiciously small
-        if os.path.getsize(MODEL_PATH) < 10000:
-            raise ValueError("Downloaded model is too small. Check Drive permissions or ID.")
+model = load_trained_model()
 
-    return tf.keras.models.load_model(MODEL_PATH, compile=False)
+# ✅ Image pre-processing
+def preprocess_image(image_bytes):
+    img = load_img(BytesIO(image_bytes), target_size=IMG_SIZE)
+    img_array = img_to_array(img).astype("float32") / 255.0
+    return np.expand_dims(img_array, axis=0)
 
-# Load model
-model = load_model()
+# ✅ Inference
+def predict(image_bytes):
+    processed = preprocess_image(image_bytes)
+    preds = model.predict(processed)[0]
+    index = np.argmax(preds)
+    confidence = preds[index] * 100
+    return index, confidence
 
-# Class labels
-label_to_name = {
-    0: "COVID-19",
-    1: "Lung Opacity",
-    2: "Normal",
-    3: "Viral Pneumonia"
-}
-
-# Streamlit UI
+# ✅ Streamlit page setup
+st.set_page_config(page_title="🩻 COVID-19 X-ray Classifier", layout="centered")
 st.title("🩻 COVID-19 Chest X-ray Classifier")
-st.write("Upload a chest X-ray image to classify it into one of the four categories.")
 
-uploaded_file = st.file_uploader("Upload an X-ray image", type=["png", "jpg", "jpeg"])
+uploaded_file = st.file_uploader("Upload a chest X-ray image", type=["jpg", "jpeg", "png"])
 
-if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded Image", use_column_width=True)
+if uploaded_file:
+    image_bytes = uploaded_file.read()
+    st.image(BytesIO(image_bytes), caption="Uploaded Image", use_container_width=True)
 
-    # Preprocess
-    image = image.resize((224, 224))
-    img_array = np.array(image) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
+    index, confidence = predict(image_bytes)
 
-    # Predict
-    prediction = model.predict(img_array)
-    predicted_class = np.argmax(prediction, axis=1)[0]
-    confidence = np.max(prediction)
-
-    st.success(f"**Prediction:** {label_to_name[predicted_class]}")
-    st.info(f"**Confidence:** {confidence * 100:.2f}%")
+    st.markdown(f"### 🧠 Prediction: **{class_labels[index]}**")
+    st.markdown(f"### 🔬 Confidence: **{confidence:.2f}%**")
