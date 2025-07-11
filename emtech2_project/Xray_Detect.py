@@ -6,9 +6,10 @@ import streamlit as st
 from PIL import Image
 
 # Google Drive direct model download link
-GDRIVE_MODEL_ID = "1kCWOATEzCVxJQhaCLz5_Em7H3ydxsvs4"  # 🔁 REPLACE THIS with your actual model ID
-MODEL_PATH = "/content/drive/MyDrive/Colab Notebooks/Datasets/dataset/xray_dataset_covid19/COVID19_Xray_Detection.h5"
-GDRIVE_URL = f"https://drive.google.com/drive/folders/1lxVfKnJN8alequpqVWshdjKjdPRQNnx2?usp=drive_link"
+MODEL_PATH = "models/COVID19_Xray_Detection.h5"
+MODEL_DIR = os.path.dirname(MODEL_PATH)
+GDRIVE_FILE_ID = "1kCWOATEzCVxJQhaCLz5_Em7H3ydxsvs4"
+GDRIVE_URL = f"https://drive.google.com/uc?id={GDRIVE_FILE_ID}"
 
 # Class mapping
 label_to_name = {
@@ -22,10 +23,9 @@ label_to_name = {
 @st.cache_resource
 def load_model():
     if not os.path.exists(MODEL_PATH):
-        with st.spinner("📦 Downloading model from Google Drive..."):
-            gdown.download(GDRIVE_URL, MODEL_PATH, quiet=False)
-    model = tf.keras.models.load_model(MODEL_PATH)
-    return model
+        os.makedirs(MODEL_DIR, exist_ok=True)
+        gdown.download(GDRIVE_URL, MODEL_PATH, quiet=False)
+    return tf.keras.models.load_model(MODEL_PATH)
 
 model = load_model()
 
