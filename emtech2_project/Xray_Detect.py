@@ -1,59 +1,53 @@
-import streamlit as st
-import tensorflow as tf
+import os
+import gdown
 import numpy as np
+import tensorflow as tf
+import streamlit as st
 from PIL import Image
-import cv2 as cv
+
+# Google Drive direct model download link
+GDRIVE_MODEL_ID = "1AbCDeFGHIjklMNOPQR"  # 🔁 REPLACE THIS with your actual model ID
+MODEL_PATH = "COVID19_Xray_Detection.h5"
+GDRIVE_URL = f"https://drive.google.com/uc?id={GDRIVE_MODEL_ID}"
 
 # Class mapping
 label_to_name = {
-    "0": "NORMAL",
-    "1": "PNEUMONIA"
+    0: "COVID-19",
+    1: "Lung Opacity",
+    2: "Normal",
+    3: "Viral Pneumonia"
 }
-class_labels = list(label_to_name.keys())
 
-# Load model
+# Load model with caching
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model("COVID19_Xray_Detection.h5")
+    if not os.path.exists(MODEL_PATH):
+        with st.spinner("📦 Downloading model from Google Drive..."):
+            gdown.download(GDRIVE_URL, MODEL_PATH, quiet=False)
+    model = tf.keras.models.load_model(MODEL_PATH)
     return model
 
 model = load_model()
 
 # Streamlit UI
 st.title("🩻 COVID-19 Chest X-ray Classifier")
-st.markdown("Upload a chest X-ray image to detect if it shows signs of **Pneumonia** or is **Normal**.")
+st.write("Upload a chest X-ray image to classify it into one of the four categories.")
 
-uploaded_file = st.file_uploader("Upload X-ray image", type=["jpg", "jpeg", "png"])
+uploaded_file = st.file_uploader("Upload an X-ray image", type=["png", "jpg", "jpeg"])
 
-# Preprocessing function
-def preprocess_image(image):
-    image_rgb = image.convert("RGB")
-    image_np = tf.keras.utils.img_to_array(image_rgb)
-    img_gray = cv.cvtColor(image_np, cv.COLOR_RGB2GRAY)
-    img_resized = cv.resize(img_gray, (224, 224))
-    img_norm = img_resized / 255.0
-    img_input = img_norm.reshape(1, 224, 224, 1)
-    return img_input
-
-if uploaded_file:
-    # Display image
-    image = Image.open(uploaded_file)
+if uploaded_file is not None:
+    image = Image.open(uploaded_file).convert("RGB")
     st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    # Preprocess and predict
-    input_image = preprocess_image(image)
-    prediction = model.predict(input_image)[0][0]
+    # Preprocess image
+    image = image.resize((224, 224))
+    img_array = np.array(image) / 255.0
+    img_array = np.expand_dims(img_array, axis=0)
 
-    # Determine result
-    if prediction >= 0.5:
-        label = "1"
-        confidence = prediction
-    else:
-        label = "0"
-        confidence = 1 - prediction
+    # Predict
+    prediction = model.predict(img_array)
+    predicted_class = np.argmax(prediction, axis=1)[0]
+    confidence = np.max(prediction)
 
-    predicted_name = label_to_name[label]
-
-    # Display result
-    st.markdown(f"### 🧠 Prediction: **{predicted_name}**")
-    st.markdown(f"Confidence Score: **{confidence * 100:.2f}%**")
+    st.success(f"**Prediction:** {label_to_name[predicted_class]}")
+    st.info(f"**Confidence:** {confidence * 100:.2f}%")
