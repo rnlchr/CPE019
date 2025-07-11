@@ -20,9 +20,10 @@ def load_trained_model():
 model = load_trained_model()
 
 def preprocess_image(image_bytes):
-    img = load_img(BytesIO(image_bytes), target_size=IMG_SIZE)
+    img = load_img(BytesIO(image_bytes), color_mode="grayscale", target_size=IMG_SIZE)
     img_array = img_to_array(img).astype("float32") / 255.0
     return np.expand_dims(img_array, axis=0)
+
 
 def predict(image_bytes):
     processed = preprocess_image(image_bytes)
