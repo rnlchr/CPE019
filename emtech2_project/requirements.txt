@@ -1,9 +1,9 @@
-numpy
+numpy<2
 pandas
 matplotlib
 seaborn
 opencv-python
 Pillow
-tensorflow
+tensorflow>=2.13
 streamlit
 scikit-learn
