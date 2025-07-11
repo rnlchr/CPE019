@@ -1,10 +1,10 @@
 import streamlit as st
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import load_img, img_to_array
 from io import BytesIO
 
+# Use your TFLite model path
 MODEL_PATH = "emtech2_project/COVID19_Xray_Detection.tflite"
 IMG_SIZE = (224, 224)
 
@@ -14,24 +14,37 @@ class_labels = [
 ]
 
 @st.cache_resource
-def load_trained_model():
-    return load_model(MODEL_PATH, compile=False)
+def load_tflite_model():
+    interpreter = tf.lite.Interpreter(model_path=MODEL_PATH)
+    interpreter.allocate_tensors()
+    return interpreter
 
-model = load_trained_model()
+interpreter = load_tflite_model()
+
+# Get input/output details once (only needed once after allocation)
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
 def preprocess_image(image_bytes):
     img = load_img(BytesIO(image_bytes), color_mode="grayscale", target_size=IMG_SIZE)
     img_array = img_to_array(img).astype("float32") / 255.0
-    return np.expand_dims(img_array, axis=0)
-
+    return np.expand_dims(img_array, axis=0)  # Shape: (1, 224, 224, 1)
 
 def predict(image_bytes):
-    processed = preprocess_image(image_bytes)
-    preds = model.predict(processed)[0]
-    index = np.argmax(preds)
-    confidence = preds[index] * 100
+    input_data = preprocess_image(image_bytes)
+    
+    # Ensure correct dtype and shape
+    input_data = input_data.astype(input_details[0]["dtype"])
+    
+    interpreter.set_tensor(input_details[0]["index"], input_data)
+    interpreter.invoke()
+    output_data = interpreter.get_tensor(output_details[0]["index"])[0]
+
+    index = np.argmax(output_data)
+    confidence = output_data[index] * 100
     return index, confidence
 
+# Streamlit interface
 st.set_page_config(page_title="🩻 COVID-19 X-ray Classifier", layout="centered")
 st.title("🩻 COVID-19 Chest X-ray Classifier")
 
